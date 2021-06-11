@@ -1,0 +1,40 @@
+## -----------------------------------------------------------------------------
+## General filetype exclusions.
+
+##
+results
+archive
+dist
+build
+doc_build
+
+## Data files
+*.nc
+*.hdf5
+
+## Large image files
+*.tif
+*.fits
+*.png
+*.bmp
+*.jpg
+*.jpeg
+
+## Emacs
+*~
+*#
+
+## Python
+*.pyc
+__pycache__
+*.egg-info
+
+## Jupyter Notebook
+.ipynb_checkpoints
+
+## System files to ignore.
+*.DS_Store
+/Icon?
+
+## IDEs
+.idea
