@@ -4,6 +4,7 @@ XICSRT: Contributed Modules
 Git Repository: https://bitbucket.org/amicitas/xicsrt_contrib  
 Git Mirror: https://github.com/PrincetonUniversity/xicsrt_contrib
 
+
 Purpose
 -------
 A collection of community contributed modules for extension of the XICSRT 
@@ -20,9 +21,9 @@ not been included as built-in objects for one of the following reasons:
 Some of these objects may eventually be moved into the main repository as their
 development advances.
 
+
 Installation
 ------------
-
 The XICSRT contributed modules can be simply installed using `pip`
 
     pip install xicsrt_contrib
@@ -34,7 +35,9 @@ Alternatively it is possible to install from source using `setuptools`
 After installation xicsrt should natively see all available contributed objects
 in the same way as built-in objects.
 
+
 Usage
 -----
+Use xicsrt normally; after installation the contributed objects are natively 
+available.
 
-Use xicsrt normally, but now these contributed objects are also available.
