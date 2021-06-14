@@ -1,9 +1,6 @@
 XICSRT: Contributed Modules
 ===========================
 
-Git Repository: https://bitbucket.org/amicitas/xicsrt_contrib
-Git Mirror: https://github.com/PrincetonUniversity/xicsrt_contrib
-
 | **Git Repository:** `bitbucket.org/amicitas/xicsrt_contrib`_
 | **Git Mirror:** `github.com/PrincetonUniversity/xicsrt_contrib`_
 
@@ -16,9 +13,9 @@ The optic, source and filter objects in this repository are meant for use with
 XICSRT. These are extra objects that may be useful to an XICSRT user but have
 not been included as built-in objects for one of the following reasons:
 
-- Usage is too specific for general use.
-- Non-standard external dependencies.
-- Performance and stability not at production quality.
+* Usage is too specific for general use.
+* Non-standard external dependencies.
+* Performance and stability not at production quality.
 
 Some of these objects may eventually be moved into the main repository as their
 development advances.
