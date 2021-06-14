@@ -21,9 +21,9 @@ copyright = '2021, Novimir A. Pablant'
 author = 'Novimir A. Pablant'
 
 # The full version, including alpha/beta/rc tags
-#from xicsrt_contrib._version import __version__
-#release = __version__
-#version = __version__
+from xicsrt_contrib._version import __version__
+release = __version__
+version = __version__
 
 
 # -- General configuration ---------------------------------------------------
