@@ -10,6 +10,8 @@ A plasma source based on ITER IMAS data.
 """
 
 import numpy as np
+import logging
+
 from xicsrt.util import profiler
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.sources._XicsrtPlasmaGeneric import XicsrtPlasmaGeneric
@@ -167,7 +169,7 @@ class XicsrtPlasmaImas(XicsrtPlasmaGeneric):
         self.data_internal['interp_velo'] = interp_veloc_1D
 
         if self.param['emissivity_file']:
-            self.log.debug(f"Reading temperature profile from: {self.param['emissivity_file']}")
+            self.log.debug(f"Reading emissivity profile from: {self.param['emissivity_file']}")
             data =  np.loadtxt(self.param['emissivity_file'], dtype = np.float64)
         else:
             raise NotImplementedError(
@@ -304,6 +306,8 @@ class XicsrtPlasmaImas(XicsrtPlasmaGeneric):
     
     def bundle_generate(self, bundle_input):
 
+        bundle_input = super().bundle_generate(bundle_input)
+
         psi_interp   = self.param['psi_interp']
         psi_center   = self.param['psi_center']
         psi_edge     =  self.param['psi_edge']     
@@ -330,7 +334,7 @@ class XicsrtPlasmaImas(XicsrtPlasmaGeneric):
         return bundle_input
 
     @staticmethod
-    def get_imas_data_from_db(self, shot, run):
+    def get_imas_data_from_db(shot, run):
         """
         Load data from the ITER IMAS database and return a dictionary.
         This static method needs to be run on the ITER HPC cluster.
@@ -338,7 +342,7 @@ class XicsrtPlasmaImas(XicsrtPlasmaGeneric):
         try:
             import imas
         except ImportError:
-            self.log.error(
+            logging.error(
                 "Could not import the imas module. Are you running on the ITER"
                 "hpc cluster with the IMAS module loaded?")
             raise
@@ -413,10 +417,13 @@ class XicsrtPlasmaImas(XicsrtPlasmaGeneric):
 
         return data_dict
 
-    def get_imas_data_from_file(self, filepath):
+    @staticmethod
+    def get_imas_data_from_file(filepath):
         """
         Load IMAS data from a savefile.
         """
+        logging.debug(f"Reading imas data from savefile: {filepath}")
+
         ext = pathlib.Path(filepath).suffix
         if ('pickle' in ext) or ('pkl' in ext):
             import pickle
@@ -429,7 +436,7 @@ class XicsrtPlasmaImas(XicsrtPlasmaGeneric):
 
         elif ('json' in ext):
             import json
-            with open(filepath, "rb") as ff:
-                data = json.load(filepath)
+            with open(filepath, "r") as ff:
+                data = json.load(ff)
 
         return data
