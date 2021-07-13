@@ -9,4 +9,4 @@ revision:
   - Incremental changes not attached to major xicsrt release.
 """
 
-__version__="0.5.0"
+__version__="0.6.0"
