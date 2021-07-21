@@ -12,6 +12,7 @@ A plasma source based on ITER IMAS data.
 import numpy as np
 import logging
 
+from xicsrt import xicsrt_io
 from xicsrt.util import profiler
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.sources._XicsrtPlasmaGeneric import XicsrtPlasmaGeneric
@@ -418,25 +419,11 @@ class XicsrtPlasmaImas(XicsrtPlasmaGeneric):
         return data_dict
 
     @staticmethod
-    def get_imas_data_from_file(filepath):
+    def get_imas_data_from_file(filename):
         """
         Load IMAS data from a savefile.
         """
-        logging.debug(f"Reading imas data from savefile: {filepath}")
-
-        ext = pathlib.Path(filepath).suffix
-        if ('pickle' in ext) or ('pkl' in ext):
-            import pickle
-            with open(filepath, "rb") as ff:
-                data = pickle.load(ff)
-
-        elif ('hdf5' in ext) or ('h5' in ext):
-            from xicsrt.util import mirhdf5
-            data = mirhdf5.hdf5ToDict(filepath)
-
-        elif ('json' in ext):
-            import json
-            with open(filepath, "r") as ff:
-                data = json.load(ff)
+        logging.debug(f"Reading imas data from savefile: {filename}")
+        data = xicsrt_io._dict_from_file(filename)
 
         return data
