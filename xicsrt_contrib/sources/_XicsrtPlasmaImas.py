@@ -52,7 +52,7 @@ class XicsrtPlasmaImas(XicsrtPlasmaGeneric):
 
     Overall this object needs some major restructuring for readability.
     Most importantly the imas data_dict should retain the structure and
-    naming convensions used in the imas python library.
+    naming conventions used in the imas python library.
     """
 
 
@@ -61,9 +61,11 @@ class XicsrtPlasmaImas(XicsrtPlasmaGeneric):
         config['emissivity_scale']  = 1.0
         config['temperature_scale'] = 1.0
         config['velocity_scale']    = 1.0
-        config['emissivity_file']   = None
-        config['temperature_file']  = None
-        config['velocity_file']     = None
+
+        # Plasma profiles should be dictionaries with arrays of values.
+        config['emissivity_profile']   = {'rho':None, 'value':None}
+        config['temperature_profile']  = {'rho':None, 'value':None}
+        config['velocity_profile']     = {'rho':None, 'value':None}
 
         config['imas_file'] = None
         config['shot_number'] = None
@@ -93,13 +95,10 @@ class XicsrtPlasmaImas(XicsrtPlasmaGeneric):
         data_dict = self.get_imas_data()
         
         #create arrays of data drom the data dictionary
-        r2d_data, z2d_data, psi2d_data, psi1d_data, rho1d_equil_data, rho1d_core_data, ionTemp1D_data, emissivity_data = self.load_data_from_imas_dict(data_dict)
-       
-        #build the needed 1d interpolations for the various quantenties effecting the x-ray generation
-        self.build_1d_interpolators(psi1d_data,rho1d_equil_data, rho1d_core_data,ionTemp1D_data,emissivity_data)
+        r2d_data, z2d_data, psi2d_data, psi1d_data, rho1d_equil_data, rho1d_core_data, ionTemp1D_data = self.load_data_from_imas_dict(data_dict)
         
         #build the 2-d interpolation of the magnetic equilibrium 
-        interp_psi_2d = self.build_psi_2d(psi1d_data,psi2d_data,r2d_data,z2d_data)
+        interp_psi_2d = self.build_psi_2d(psi1d_data, psi2d_data, r2d_data, z2d_data)
 
         r_rho_min  = data_dict['psi_axis_r']
         z_rho_min  = data_dict['psi_axis_z']
@@ -120,9 +119,16 @@ class XicsrtPlasmaImas(XicsrtPlasmaGeneric):
         psi_center = np.max(psi2d_data[mask])
         psi_edge = np.min(psi1d_data)
 
-        return interp_psi_2d, r_rho_min,z_rho_min,psi_center,psi_edge
+        return interp_psi_2d, r_rho_min, z_rho_min, psi_center, psi_edge
 
     def get_imas_data(self):
+        """
+        Get a dictionary containing the IMAS data.
+
+        If an 'imas_file' datafile is provided, it will be used to laad the data
+        otherwise an attempt will be made to load the data from the IMAS
+        database.
+        """
 
         if self.param['imas_file']:
             data = self.get_imas_data_from_file(self.param['imas_file'])
@@ -131,7 +137,7 @@ class XicsrtPlasmaImas(XicsrtPlasmaGeneric):
 
         return data
 
-    def build_psi_2d(self,psi1d,psi2d,r2d,z2d):
+    def build_psi_2d(self, psi1d, psi2d, r2d, z2d):
 
         #build 2d interpolation function
         interp_psi2d = interpolate.RectBivariateSpline(r2d.T[0],z2d[0],psi2d)
@@ -147,43 +153,10 @@ class XicsrtPlasmaImas(XicsrtPlasmaGeneric):
         psi1d_data = data_dict['psi_1d_data'] 
         rho1d_equil_data = data_dict['equil_rho_1d_data'] 
         rho1d_core_data = data_dict['core_rho_1d_data'] 
-        ionTemp1D_data = data_dict['temp_1d_data']  
-        emissivity_data = data_dict['emis_1d_data'] 
+        ionTemp1D_data = data_dict['temp_1d_data']
         
-        return r2d_data, z2d_data, psi2d_data, psi1d_data, rho1d_equil_data, rho1d_core_data, ionTemp1D_data, emissivity_data
-    
-    def build_1d_interpolators(self, psi1d_data,rho1d_equil_data,rho1d_core_data,ionTemp1D_data,emissivity_data):
+        return r2d_data, z2d_data, psi2d_data, psi1d_data, rho1d_equil_data, rho1d_core_data, ionTemp1D_data
 
-        if self.param['temperature_file']:
-            self.log.debug(f"Reading temperature profile from: {self.param['temperature_file']}")
-            data =  np.loadtxt(self.param['temperature_file'], dtype = np.float64)
-        else:
-            data = np.array([rho1d_core_data, ionTemp1D_data*1e3]).T
-        interp_temp_1D = interpolate.interp1d(
-            data[:,0],
-            data[:,1],
-            fill_value=(np.max(data[:,1]),0),
-            bounds_error=False)
-        self.data_internal['interp_temp'] = interp_temp_1D
-
-        interp_veloc_1D = None
-        self.data_internal['interp_velo'] = interp_veloc_1D
-
-        if self.param['emissivity_file']:
-            self.log.debug(f"Reading emissivity profile from: {self.param['emissivity_file']}")
-            data =  np.loadtxt(self.param['emissivity_file'], dtype = np.float64)
-        else:
-            raise NotImplementedError(
-                "Impurity charge state emissivities from IMAS not currently supported. "
-                "Please use the 'emissivity_file' config option")
-        interp_emis_1D = interpolate.interp1d(
-            data[:,0],
-            data[:,1],
-            fill_value='extrapolate',
-            bounds_error=False)
-        self.data_internal['interp_emis'] = interp_emis_1D
-
-           
     def RZ_from_car(self,car_array):
         'Convert the cartesian coordinates of an nx3 array to cylindrical R,Z used by equilibrium interpolation'
    
@@ -214,23 +187,82 @@ class XicsrtPlasmaImas(XicsrtPlasmaGeneric):
         
         return rho_array
 
-    def get_temperature(self, rho):
+    def get_temperature(self, rho_in):
+        """
+        Get the temperature at the given values of rho.
 
-        interp = self.data_internal['interp_temp']
-        output = interp(rho)
-        
+        For now, we assume that the temperature profile is provided in the
+        config dictionary. It would be straight forward to pull this out of
+        the IMAS dictionary using rho1d_core_data & ionTemp1D_data.
+
+        Here I am rebuilding the 1D interpolation each time this function
+        is called. This is currently the best and most readable solution;
+        in the future pre-initialization or cacheing of the interpolators
+        might be useful if this method ends up being called many times.
+        """
+
+        if self.param['temperature_profile']:
+            rho = self.param['temperature_profile']['rho']
+            value = self.param['temperature_profile']['value']
+
+            interp = interpolate.interp1d(
+                rho,
+                value,
+                fill_value=(np.max(value),0),
+                bounds_error=False)
+
+            output = interp(rho_in)
+        else:
+            self.log.warning('No temperature profile provided. Setting temperature to zero.')
+            output = np.zeros(len(rho_in))
+
         return output
 
-    def get_emissivity(self, rho):
+    def get_emissivity(self, rho_in):
 
-        interp = self.data_internal['interp_emis']
-        output = interp(rho)
-        
+        if self.param['emissivity_profile']:
+            rho = self.param['emissivity_profile']['rho']
+            value = self.param['emissivity_profile']['value']
+
+            interp = interpolate.interp1d(
+                rho,
+                value,
+                fill_value=(np.max(value), 0),
+                bounds_error=False)
+
+            output = interp(rho_in)
+        else:
+            self.log.warning('No emissivity profile provided. Setting emissivity to zero.')
+            output = np.zeros(len(rho_in))
+
         return output
 
-    def get_velocity(self, rho):
-        # For now just set velocity to zero.
-        output = np.zeros((len(rho),3))
+    def get_velocity(self, rho_in):
+
+        if self.param['velocity_profile']:
+            rho = self.param['velocity_profile']['rho']
+            value = self.param['velocity_profile']['value']
+
+            interp_x = interpolate.interp1d(
+                rho,
+                value[:,0],
+                fill_value=(np.max(value), 0),
+                bounds_error=False)
+            interp_y = interpolate.interp1d(
+                rho,
+                value[:,1],
+                fill_value=(np.max(value), 0),
+                bounds_error=False)
+            interp_z = interpolate.interp1d(
+                rho,
+                value[:,2],
+                fill_value=(np.max(value), 0),
+                bounds_error=False)
+
+            output = np.stack((interp_x(rho_in), interp_y(rho_in), interp_z(rho_in)), axis=1)
+        else:
+            self.log.warning('No velocity profile provided. Setting velocity to zero.')
+            output = np.zeros((len(rho_in),3))
         
         return output
     
@@ -317,7 +349,7 @@ class XicsrtPlasmaImas(XicsrtPlasmaGeneric):
         m = bundle_input['mask']
 
         profiler.start("Fluxspace from Realspace")
-        rho = self.rho_from_car(bundle_input['origin'][m],psi_interp,psi_center,psi_edge)
+        rho = self.rho_from_car(bundle_input['origin'][m], psi_interp, psi_center, psi_edge)
         profiler.stop("Fluxspace from Realspace")
         
         
