@@ -42,47 +42,47 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
         point_flx = self.eq.map_coordinates(
             point_car, 
             inbasis = ("X", "Y", "Z"), 
-            outbasis = ("rho", "theta", "zeta")
+            outbasis = ("rho", "theta", "zeta"),
         )
         return point_flx
 
     def car_from_flx(self, point_flx):
         point_car = self.eq.map_coordinates(
             point_flx,
-            inbasis = ("rho", "theta", "zeta")
-            outbasis = ("X", "Y", "Z")
+            inbasis = ("rho", "theta", "zeta"),
+            outbasis = ("X", "Y", "Z"),
         )
         return point_car
 
     def flx_from_cyl(self, point_cyl):
         point_flx = self.eq.map_coordinates(
             point_cyl, 
-            inbasis = ("R", "phi", "Z")
-            outbasis = ("rho", "theta", "zeta")
+            inbasis = ("R", "phi", "Z"),
+            outbasis = ("rho", "theta", "zeta"),
         )
         return point_flx
 
     def cyl_from_flx(self, point_flx):
         point_cyl = self.eq.map_coordinates(
             point_flx, 
-            inbasis = ("rho", "theta", "zeta")
-            outbasis = ("R", "phi", "Z")
+            inbasis = ("rho", "theta", "zeta"),
+            outbasis = ("R", "phi", "Z"),
         )
         return point_cyl
 
     def cyl_from_car(self, point_car):
         point_cyl = self.eq.map_coordinates(
             point_car, 
-            inbasis = ("X", "Y", "Z")
-            outbasis = ("R", "phi", "Z")
+            inbasis = ("X", "Y", "Z"),
+            outbasis = ("R", "phi", "Z"),
         )
         return point_cyl
 
     def car_from_cyl(self, point_cyl):
         point_car = self.eq.map_coordinates(
             point_cyl, 
-            inbasis = ("R", "phi", "Z")
-            outbasis = ("X", "Y", "Z")
+            inbasis = ("R", "phi", "Z"),
+            outbasis = ("X", "Y", "Z"),
         )
 
     # DESC uses rho directly; stelltools returns s so rho=sqrt(s)
