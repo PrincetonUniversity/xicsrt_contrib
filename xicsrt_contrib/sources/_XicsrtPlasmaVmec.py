@@ -84,6 +84,7 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
             inbasis = ("R", "phi", "Z"),
             outbasis = ("X", "Y", "Z"),
         )
+        return point_car
 
     # DESC uses rho directly; stelltools returns s so rho=sqrt(s)
     def rho_from_car(self, point_car):
