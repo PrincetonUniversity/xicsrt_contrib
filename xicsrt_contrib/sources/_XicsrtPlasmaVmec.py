@@ -87,9 +87,11 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
         return point_car
 
     # DESC uses rho directly; stelltools returns s so rho=sqrt(s)
+    # DESC wants each point passed to map_coordinated to have shape (1,3) not just (3,)
     def rho_from_car(self, point_car):
+        point_car = np.asarray(point_car).reshape(1, 3)
         point_flx = self.flx_from_car(point_car)
-        return point_flx[0]
+        return point_flx[0, 0]
 
     def bundle_generate(self, bundle_input):
         self.log.debug('Starting bundle_generate')
@@ -110,7 +112,7 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
             profiler.start("Fluxspace from Realspace")
             try:
                 rho[ii] = self.rho_from_car(bundle_input['origin'][m][ii,:])
-            except Exceptions:
+            except Exception:
                 rho[ii] = np.nan
             profiler.stop("Fluxspace from Realspace")
         
