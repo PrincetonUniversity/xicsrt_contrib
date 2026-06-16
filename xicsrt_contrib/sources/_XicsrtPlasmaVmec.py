@@ -87,11 +87,11 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
         return point_car
 
     # DESC uses rho directly; stelltools returns s so rho=sqrt(s)
-    # DESC wants each point passed to map_coordinated to have shape (1,3) not just (3,)
+    # this assumes that 'point_car_temp' is a 2D array with shape (N,3)
     def rho_from_car(self, point_car):
-        point_car = np.asarray(point_car).reshape(1, 3)
-        point_flx = self.flx_from_car(point_car)
-        return point_flx[0, 0]
+        point_car_temp = np.asarray(point_car)
+        point_flx = self.flx_from_car(point_car_temp)
+        return point_flx[:, 0]
 
     def bundle_generate(self, bundle_input):
         self.log.debug('Starting bundle_generate')
