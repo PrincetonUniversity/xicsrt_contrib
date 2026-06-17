@@ -9,6 +9,14 @@ Description
 -----------
 A plasma source based on a VMEC equilibrium.
 Rewritten to perform all coordinate transformations using DESC.
+
+Definitions
+-----------
+
+Flux Coordinates: [rho, theta, zeta]
+    where rho = sqrt(s) = sqrt(psi/psi_edge)
+
+
 """
 
 import numpy as np
@@ -23,6 +31,10 @@ from desc.grid import Grid
 
 @dochelper
 class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.eq = None
 
     def default_config(self):
         config = super().default_config()
@@ -39,6 +51,9 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
         self.eq = VMECIO.load(wout)
     
     def flx_from_car(self, point_car):
+        if self.eq is None:
+            self.initialize_vmec()
+
         point_flx = self.eq.map_coordinates(
             point_car, 
             inbasis = ("X", "Y", "Z"), 
@@ -47,6 +62,9 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
         return point_flx
 
     def car_from_flx(self, point_flx):
+        if self.eq is None:
+            self.initialize_vmec()
+
         point_car = self.eq.map_coordinates(
             point_flx,
             inbasis = ("rho", "theta", "zeta"),
@@ -55,6 +73,9 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
         return point_car
 
     def flx_from_cyl(self, point_cyl):
+        if self.eq is None:
+            self.initialize_vmec()
+
         point_flx = self.eq.map_coordinates(
             point_cyl, 
             inbasis = ("R", "phi", "Z"),
@@ -63,6 +84,9 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
         return point_flx
 
     def cyl_from_flx(self, point_flx):
+        if self.eq is None:
+            self.initialize_vmec()
+
         point_cyl = self.eq.map_coordinates(
             point_flx, 
             inbasis = ("rho", "theta", "zeta"),
@@ -86,7 +110,6 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
         )
         return point_car
 
-    # DESC uses rho directly; stelltools returns s so rho=sqrt(s)
     def rho_from_car(self, point_car):
         point_flx = self.flx_from_car(point_car)
         return point_flx[:, 0]
