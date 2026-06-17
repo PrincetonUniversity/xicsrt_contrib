@@ -87,10 +87,8 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
         return point_car
 
     # DESC uses rho directly; stelltools returns s so rho=sqrt(s)
-    # this assumes that 'point_car_temp' is a 2D array with shape (N,3)
     def rho_from_car(self, point_car):
-        point_car_temp = np.asarray(point_car)
-        point_flx = self.flx_from_car(point_car_temp)
+        point_flx = self.flx_from_car(point_car)
         return point_flx[:, 0]
 
     def bundle_generate(self, bundle_input):
@@ -102,19 +100,23 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
         m = bundle_input['mask']
 
         # Attempt to generate the specified number of bundles, but throw out
-        # bundles that our outside of the last closed flux surface.
+        # bundles that are outside of the last closed flux surface.
         #
-        # Currently DESC coordinate inversion may only handle one point at a time,
-        # so a loop is required. This will be improved eventually.
-        rho = np.zeros(len(m[m]))
-        for ii in range(len(m[m])):
-            # convert from cartesian coordinates to normalized radial coordinate.
-            profiler.start("Fluxspace from Realspace")
-            try:
-                rho[ii] = self.rho_from_car(bundle_input['origin'][m][ii,:])
-            except Exception:
-                rho[ii] = np.nan
-            profiler.stop("Fluxspace from Realspace")
+        # DESC can handle all selected Cartesian points at once
+        # so a loop is no9 longer required.
+        profiler.start("Fluxspace from Realspace")
+
+        # 'rho' must be converted to a NumPy array before editing
+        # originally 'rho' was a JAX array which cannot be changed in place
+        # '.copy()' must be added to make the array editable, not just readable
+        rho = np.asarray(self.rho_from_car(bundle_input['origin'][m])).copy()
+
+        # Mimic Stelltools DomainError behavior
+        # DESC returns rho=1 for all points outside the domain/LCFS
+        rho[~np.isfinite(rho)] = np.nan
+        rho[rho >= 1.0] = np.nan
+        
+        profiler.stop("Fluxspace from Realspace")
         
         # evaluate emissivity, temperature and velocity at each bundle location.
         bundle_input['temperature'][m] = self.get_temperature(rho) * self.param['temperature_scale']
