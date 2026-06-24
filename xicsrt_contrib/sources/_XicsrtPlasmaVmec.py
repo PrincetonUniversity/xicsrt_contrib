@@ -146,7 +146,7 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
         points = bundle_input['origin'][m]
         point_flx_temp = self.flx_from_car(points)
         point_check = self.car_from_flx(point_flx_temp)
-        rho = np.asarray(point_flx[:, 0]).copy()
+        rho = np.asarray(point_flx_temp[:, 0]).copy()
         error = np.linalg.norm(point_check - points, axis=1)
         rho[(~np.isfinite(rho)) | (eho >= 1.0) | (error > 1e-2)] = np.nan
         
