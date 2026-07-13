@@ -31,6 +31,10 @@ from desc.grid import Grid
 
 @dochelper
 class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.eq = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -110,6 +114,7 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
         )
         return point_car
 
+    # DESC uses rho directly; stelltools returns s so rho=sqrt(s)
     def rho_from_car(self, point_car):
         point_flx = self.flx_from_car(point_car)
         return point_flx[:, 0]
@@ -123,23 +128,24 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
         m = bundle_input['mask']
 
         # Attempt to generate the specified number of bundles, but throw out
-        # bundles that are outside of the last closed flux surface.
-        #
-        # DESC can handle all selected Cartesian points at once
-        # so a loop is no9 longer required.
+        # bundles that are outside the last closed flux surface.
+
         profiler.start("Fluxspace from Realspace")
-
-        # 'rho' must be converted to a NumPy array before editing
-        # originally 'rho' was a JAX array which cannot be changed in place
-        # '.copy()' must be added to make the array editable, not just readable
-        rho = np.asarray(self.rho_from_car(bundle_input['origin'][m])).copy()
-
-        # Mimic Stelltools DomainError behavior
-        # DESC returns rho=1 for all points outside the domain/LCFS
-        rho[~np.isfinite(rho)] = np.nan
-        rho[rho >= 1.0] = np.nan
-        
+        points = bundle_input['origin'][m]
+        point_flx_temp = self.flx_from_car(points)
+        # Convert the jax ndarray into an editable numpy mutable ndarray
+        rho = np.asarray(point_flx_temp[:, 0]).copy()
         profiler.stop("Fluxspace from Realspace")
+
+
+        profiler.start("Realspace from Fluxspace")
+        # DESC's coordinate transformation is unreliable for points far from LCFS
+        # using the round-trip error to filter out points outside LCFS
+        point_car_check = self.car_from_flx(point_flx_temp)
+        error = np.linalg.norm(point_car_check - points, axis=1)
+        rho[(~np.isfinite(rho)) | (rho >= 1.0) | (error > 1e-2)] = np.nan
+        profiler.stop("Realspace from Fluxspace")
+
         
         # evaluate emissivity, temperature and velocity at each bundle location.
         bundle_input['temperature'][m] = self.get_temperature(rho) * self.param['temperature_scale']
