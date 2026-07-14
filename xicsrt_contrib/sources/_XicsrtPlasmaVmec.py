@@ -42,10 +42,11 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
 
     def default_config(self):
         config = super().default_config()
-        config['wout_file']         = None
-        config['emissivity_scale']  = 1.0
-        config['temperature_scale'] = 1.0
-        config['velocity_scale']    = 1.0
+        config['wout_file']           = None
+        config['emissivity_scale']    = 1.0
+        config['temperature_scale']   = 1.0
+        config['temperature_e_scale'] = 1.0
+        config['velocity_scale']      = 1.0
         return config
         
     # we use self.eq because we want to use the equilibrium in other methods
@@ -148,9 +149,10 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
 
         
         # evaluate emissivity, temperature and velocity at each bundle location.
-        bundle_input['temperature'][m] = self.get_temperature(rho) * self.param['temperature_scale']
-        bundle_input['emissivity'][m]  = self.get_emissivity(rho)  * self.param['emissivity_scale']
-        bundle_input['velocity'][m]    = self.get_velocity(rho)    * self.param['velocity_scale']
+        bundle_input['temperature'][m]   = self.get_temperature(rho)   * self.param['temperature_scale']
+        bundle_input['temperature_e'][m] = self.get_temperature_e(rho) * self.param['temperature_e_scale']
+        bundle_input['emissivity'][m]    = self.get_emissivity(rho)    * self.param['emissivity_scale']
+        bundle_input['velocity'][m]      = self.get_velocity(rho)      * self.param['velocity_scale']
         
         fintest = np.isfinite(bundle_input['temperature'])
         m &= fintest
