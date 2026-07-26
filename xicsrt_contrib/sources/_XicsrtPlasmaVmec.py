@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+This file includes AI generated code using Claude (Sonnet 5).
+
 Authors
 -------
   - Yevgeniy Yakusevich <eugenethree@gmail.com>
@@ -7,7 +9,7 @@ Authors
 
 Description
 -----------
-A plasma source based on a VMEC equilibrium.
+A plasma source based on a VMEC or DESC equilibrium.
 Rewritten to perform all coordinate transformations using DESC.
 
 Definitions
@@ -20,12 +22,14 @@ Flux Coordinates: [rho, theta, zeta]
 """
 
 import numpy as np
+import pathlib
 
 from xicsrt.util import profiler
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.sources._XicsrtPlasmaGeneric import XicsrtPlasmaGeneric
 
 import desc
+import desc.io
 from desc.vmec import VMECIO
 from desc.grid import Grid
 
@@ -41,6 +45,13 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
         self.eq = None
 
     def default_config(self):
+        """
+        wout_file : string (None)
+          Path to an equilibrium file. Either a VMEC `wout*.nc` file (loaded
+          with `desc.vmec.VMECIO.load`) or a saved DESC equilibrium `*.h5`
+          file (loaded with `desc.io.load`). The format is selected
+          automatically from the file extension (`.nc` or `.h5`).
+        """
         config = super().default_config()
         config['wout_file']           = None
         config['emissivity_scale']    = 1.0
@@ -51,9 +62,31 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
         
     # we use self.eq because we want to use the equilibrium in other methods
     def initialize_vmec(self, wout=None):
+        """
+        Load the equilibrium referenced by `wout_file` into `self.eq`.
+
+        The equilibrium format is selected from the file extension: a VMEC
+        `wout*.nc` file is loaded with `VMECIO.load`, while a saved DESC
+        equilibrium `*.h5` file is loaded with `desc.io.load`. This allows
+        either a VMEC or a DESC equilibrium input to be used interchangeably,
+        since all coordinate transforms below only rely on `self.eq` exposing
+        the DESC `Equilibrium.map_coordinates` interface.
+
+        This method was AI generated using Claude (Sonnet 5).
+        """
         if wout is None:
             wout = self.param['wout_file']
-        self.eq = VMECIO.load(wout)
+
+        suffix = pathlib.Path(wout).suffix.lower()
+        if suffix == '.nc':
+            self.eq = VMECIO.load(wout)
+        elif suffix == '.h5':
+            self.eq = desc.io.load(wout)
+        else:
+            raise ValueError(
+                f"Unsupported equilibrium file extension '{suffix}' for wout_file"
+                f" '{wout}'. Expected a VMEC '.nc' file or a saved DESC '.h5' file."
+            )
     
     def flx_from_car(self, point_car):
         if self.eq is None:
@@ -123,8 +156,10 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
     def bundle_generate(self, bundle_input):
         self.log.debug('Starting bundle_generate')
 
+        profiler.start("Load Equilibrium")
         self.initialize_vmec()
-        
+        profiler.stop("Load Equilibrium")
+
         profiler.start("Bundle Input Generation")
         m = bundle_input['mask']
 
