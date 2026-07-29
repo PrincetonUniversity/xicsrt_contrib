@@ -173,7 +173,6 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
         rho = np.asarray(point_flx_temp[:, 0]).copy()
         profiler.stop("Fluxspace from Realspace")
 
-
         profiler.start("Realspace from Fluxspace")
         # DESC's coordinate transformation is unreliable for points far from LCFS
         # using the round-trip error to filter out points outside LCFS
@@ -182,7 +181,8 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
         rho[(~np.isfinite(rho)) | (rho >= 1.0) | (error > 1e-2)] = np.nan
         profiler.stop("Realspace from Fluxspace")
 
-        
+        self.log.info(f'Num rho: {len(rho)}, Num finite: {np.sum(np.isfinite(rho))}')
+
         # evaluate emissivity, temperature and velocity at each bundle location.
         bundle_input['temperature'][m]   = self.get_temperature(rho)   * self.param['temperature_scale']
         bundle_input['temperature_e'][m] = self.get_temperature_e(rho) * self.param['temperature_e_scale']
